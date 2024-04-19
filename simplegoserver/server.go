@@ -16,8 +16,10 @@ type User struct {
 }
 
 func main() {
-	log.SetPrefix("Server Error: ")
+	log.SetPrefix("Server Log: ")
 	port := "8080"
+	serverConfig := getConfig()
+	log.Println(serverConfig)
 	fmt.Println("Server running on port: ", port)
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe("localhost:"+port, nil)
