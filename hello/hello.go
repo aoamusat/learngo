@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"learngo.io/greetings"
 	"rsc.io/quote"
@@ -9,7 +10,13 @@ import (
 
 func main() {
 
-	var message = greetings.HelloGreeting("Akeem")
+	log.SetPrefix("Error: ")
+
+	message, err := greetings.HelloGreeting("Akeem")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println(message)
 
 	fmt.Printf("\n#QOTD: %s\n", quote.Go())
