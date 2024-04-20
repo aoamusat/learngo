@@ -10,14 +10,14 @@ import (
 
 // User represents a user object.
 type User struct {
-	ID        int    `json:"id"`
-	UserAgent string `json:"userAgent"`
-	IPAddress string `json:"ipAddress"`
+	ID        int
+	UserAgent string
+	IPAddress string
 }
 
 func main() {
 	log.SetPrefix("Server Log: ")
-	port := "8080"
+	port := getServerPort()
 	serverConfig := getConfig()
 	log.Println(serverConfig)
 	fmt.Println("Server running on port: ", port)

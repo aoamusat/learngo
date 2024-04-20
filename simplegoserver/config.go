@@ -2,8 +2,10 @@ package main
 
 import "os"
 
+// getPort retrieves the port number from the environment variable PORT
+// or returns a default value of "8080" if PORT is not set.
 func getServerPort() string {
-	port := os.Getenv("PORT")
+	port := os.Getenv("GO_PORT")
 	if port == "" {
 		return "8080"
 	}
