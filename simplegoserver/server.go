@@ -23,7 +23,9 @@ func main() {
 	fmt.Println("Server running on port: ", port)
 	http.HandleFunc("/", handler)
 	err := http.ListenAndServe("localhost:"+port, nil)
-	log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 // handler echoes the Path component of the request URL r.
