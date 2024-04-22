@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+
+	"syreclabs.com/go/faker"
 )
 
 // User represents a user object.
@@ -15,6 +17,13 @@ type User struct {
 	IPAddress string
 }
 
+type Movie struct {
+	Title  string
+	Year   int
+	Color  bool
+	Actors []string
+}
+
 func main() {
 	log.SetPrefix("Server Log: ")
 	port := getServerPort()
@@ -22,6 +31,7 @@ func main() {
 	log.Println(serverConfig)
 	fmt.Println("Server running on port: ", port)
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/movies", GetMoviesHandler)
 	err := http.ListenAndServe("localhost:"+port, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -46,4 +56,28 @@ func handler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	response.Write(jsonData)
+}
+
+func GetMoviesHandler(response http.ResponseWriter, request *http.Request) {
+	// Declare slice of movies
+	var movies []Movie
+
+	for i := 0; i < 10; i++ {
+		movies = append(movies, Movie{
+			Title:  faker.Lorem().Sentence(2),
+			Year:   faker.RandomInt(2010, 2024),
+			Actors: []string{faker.Name().Name(), faker.Name().Name(), faker.Name().Name()},
+			Color:  []bool{true, false}[faker.RandomInt(0, 1)],
+		})
+	}
+
+	moviesJson, err := json.Marshal(movies)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	response.Header().Set("Content-Type", "application/json")
+
+	response.Write((moviesJson))
 }
