@@ -11,6 +11,7 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "client" service endpoints.
@@ -22,10 +23,12 @@ type Endpoints struct {
 
 // NewEndpoints wraps the methods of the "client" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
+	// Casting service to Auther interface
+	a := s.(Auther)
 	return &Endpoints{
-		Add:  NewAddEndpoint(s),
-		Get:  NewGetEndpoint(s),
-		Show: NewShowEndpoint(s),
+		Add:  NewAddEndpoint(s, a.JWTAuth),
+		Get:  NewGetEndpoint(s, a.JWTAuth),
+		Show: NewShowEndpoint(s, a.JWTAuth),
 	}
 }
 
@@ -38,18 +41,38 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 
 // NewAddEndpoint returns an endpoint function that calls the method "add" of
 // service "client".
-func NewAddEndpoint(s Service) goa.Endpoint {
+func NewAddEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
 		p := req.(*AddPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{"api:read", "api:write"},
+			RequiredScopes: []string{"api:write"},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
 		return nil, s.Add(ctx, p)
 	}
 }
 
 // NewGetEndpoint returns an endpoint function that calls the method "get" of
 // service "client".
-func NewGetEndpoint(s Service) goa.Endpoint {
+func NewGetEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
 		p := req.(*GetPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{"api:read", "api:write"},
+			RequiredScopes: []string{"api:read"},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
 		res, err := s.Get(ctx, p)
 		if err != nil {
 			return nil, err
@@ -61,9 +84,20 @@ func NewGetEndpoint(s Service) goa.Endpoint {
 
 // NewShowEndpoint returns an endpoint function that calls the method "show" of
 // service "client".
-func NewShowEndpoint(s Service) goa.Endpoint {
+func NewShowEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		res, err := s.Show(ctx)
+		p := req.(*ShowPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{"api:read", "api:write"},
+			RequiredScopes: []string{"api:read"},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		res, err := s.Show(ctx, p)
 		if err != nil {
 			return nil, err
 		}

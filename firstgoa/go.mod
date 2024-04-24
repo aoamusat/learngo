@@ -5,6 +5,7 @@ go 1.21.1
 require goa.design/goa/v3 v3.16.1
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.0 // indirect
 )

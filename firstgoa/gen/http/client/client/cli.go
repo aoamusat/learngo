@@ -16,36 +16,62 @@ import (
 
 // BuildAddPayload builds the payload for the client add endpoint from CLI
 // flags.
-func BuildAddPayload(clientAddBody string, clientAddClientID string) (*client.AddPayload, error) {
+func BuildAddPayload(clientAddBody string, clientAddClientID string, clientAddToken string) (*client.AddPayload, error) {
 	var err error
 	var body AddRequestBody
 	{
 		err = json.Unmarshal([]byte(clientAddBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ClientName\": \"Pariatur consequatur reiciendis rerum similique aut dolore.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ClientName\": \"Ducimus sapiente suscipit consequatur minima animi.\",\n      \"ContactEmail\": \"Id enim deleniti qui est ab.\",\n      \"ContactMobile\": 3474453470839196953,\n      \"ContactName\": \"Magnam quod ratione provident consequatur ea esse.\"\n   }'")
 		}
 	}
 	var clientID string
 	{
 		clientID = clientAddClientID
 	}
+	var token string
+	{
+		token = clientAddToken
+	}
 	v := &client.AddPayload{
-		ClientName: body.ClientName,
+		ClientName:    body.ClientName,
+		ContactName:   body.ContactName,
+		ContactEmail:  body.ContactEmail,
+		ContactMobile: body.ContactMobile,
 	}
 	v.ClientID = clientID
+	v.Token = token
 
 	return v, nil
 }
 
 // BuildGetPayload builds the payload for the client get endpoint from CLI
 // flags.
-func BuildGetPayload(clientGetClientID string) (*client.GetPayload, error) {
+func BuildGetPayload(clientGetClientID string, clientGetToken string) (*client.GetPayload, error) {
 	var clientID string
 	{
 		clientID = clientGetClientID
 	}
+	var token string
+	{
+		token = clientGetToken
+	}
 	v := &client.GetPayload{}
 	v.ClientID = clientID
+	v.Token = token
+
+	return v, nil
+}
+
+// BuildShowPayload builds the payload for the client show endpoint from CLI
+// flags.
+func BuildShowPayload(clientShowToken string) (*client.ShowPayload, error) {
+	var token string
+	{
+		token = clientShowToken
+	}
+	v := &client.ShowPayload{}
+	v.Token = token
 
 	return v, nil
 }

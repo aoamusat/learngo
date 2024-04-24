@@ -18,6 +18,12 @@ import (
 type AddRequestBody struct {
 	// Client ID
 	ClientName *string `form:"ClientName,omitempty" json:"ClientName,omitempty" xml:"ClientName,omitempty"`
+	// Contact Name
+	ContactName *string `form:"ContactName,omitempty" json:"ContactName,omitempty" xml:"ContactName,omitempty"`
+	// Contact Email
+	ContactEmail *string `form:"ContactEmail,omitempty" json:"ContactEmail,omitempty" xml:"ContactEmail,omitempty"`
+	// Contact Mobile Number
+	ContactMobile *int `form:"ContactMobile,omitempty" json:"ContactMobile,omitempty" xml:"ContactMobile,omitempty"`
 }
 
 // GetResponseBody is the type of the "client" service "get" endpoint HTTP
@@ -27,6 +33,12 @@ type GetResponseBody struct {
 	ClientID string `form:"ClientID" json:"ClientID" xml:"ClientID"`
 	// Name of the Client
 	ClientName string `form:"ClientName" json:"ClientName" xml:"ClientName"`
+	// Name of the Contact.
+	ContactName string `form:"ContactName" json:"ContactName" xml:"ContactName"`
+	// Email of the Client Contact
+	ContactEmail string `form:"ContactEmail" json:"ContactEmail" xml:"ContactEmail"`
+	// Mobile number of the Client Contact
+	ContactMobile int `form:"ContactMobile" json:"ContactMobile" xml:"ContactMobile"`
 }
 
 // ClientManagementResponseCollection is the type of the "client" service
@@ -39,14 +51,23 @@ type ClientManagementResponse struct {
 	ClientID string `form:"ClientID" json:"ClientID" xml:"ClientID"`
 	// Name of the Client
 	ClientName string `form:"ClientName" json:"ClientName" xml:"ClientName"`
+	// Name of the Contact.
+	ContactName string `form:"ContactName" json:"ContactName" xml:"ContactName"`
+	// Email of the Client Contact
+	ContactEmail string `form:"ContactEmail" json:"ContactEmail" xml:"ContactEmail"`
+	// Mobile number of the Client Contact
+	ContactMobile int `form:"ContactMobile" json:"ContactMobile" xml:"ContactMobile"`
 }
 
 // NewGetResponseBody builds the HTTP response body from the result of the
 // "get" endpoint of the "client" service.
 func NewGetResponseBody(res *clientviews.ClientManagementView) *GetResponseBody {
 	body := &GetResponseBody{
-		ClientID:   *res.ClientID,
-		ClientName: *res.ClientName,
+		ClientID:      *res.ClientID,
+		ClientName:    *res.ClientName,
+		ContactName:   *res.ContactName,
+		ContactEmail:  *res.ContactEmail,
+		ContactMobile: *res.ContactMobile,
 	}
 	return body
 }
@@ -62,19 +83,32 @@ func NewClientManagementResponseCollection(res clientviews.ClientManagementColle
 }
 
 // NewAddPayload builds a client service add endpoint payload.
-func NewAddPayload(body *AddRequestBody, clientID string) *client.AddPayload {
+func NewAddPayload(body *AddRequestBody, clientID string, token string) *client.AddPayload {
 	v := &client.AddPayload{
-		ClientName: *body.ClientName,
+		ClientName:    *body.ClientName,
+		ContactName:   *body.ContactName,
+		ContactEmail:  *body.ContactEmail,
+		ContactMobile: *body.ContactMobile,
 	}
 	v.ClientID = clientID
+	v.Token = token
 
 	return v
 }
 
 // NewGetPayload builds a client service get endpoint payload.
-func NewGetPayload(clientID string) *client.GetPayload {
+func NewGetPayload(clientID string, token string) *client.GetPayload {
 	v := &client.GetPayload{}
 	v.ClientID = clientID
+	v.Token = token
+
+	return v
+}
+
+// NewShowPayload builds a client service show endpoint payload.
+func NewShowPayload(token string) *client.ShowPayload {
+	v := &client.ShowPayload{}
+	v.Token = token
 
 	return v
 }
@@ -83,6 +117,15 @@ func NewGetPayload(clientID string) *client.GetPayload {
 func ValidateAddRequestBody(body *AddRequestBody) (err error) {
 	if body.ClientName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ClientName", "body"))
+	}
+	if body.ContactName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactName", "body"))
+	}
+	if body.ContactEmail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactEmail", "body"))
+	}
+	if body.ContactMobile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactMobile", "body"))
 	}
 	return
 }

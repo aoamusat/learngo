@@ -11,7 +11,7 @@ import (
 // Main API declaration
 var _ = API("clients", func() {
 	Title("An api for clients")
-	Description("This api manages clients with CRUD operations")
+	Description("This API manages clients with CRUD operations")
 	cors.Origin("/.*localhost.*/", func() {
 		cors.Headers("X-Authorization", "X-Time", "X-Api-Version",
 			"Content-Type", "Origin", "Authorization")

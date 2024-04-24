@@ -10,6 +10,7 @@ package client
 import (
 	"context"
 
+	"goa.design/goa/v3/security"
 	clientviews "learngo.io/firstgoa/gen/client/views"
 )
 
@@ -20,7 +21,13 @@ type Service interface {
 	// Get implements get.
 	Get(context.Context, *GetPayload) (res *ClientManagement, err error)
 	// Show implements show.
-	Show(context.Context) (res ClientManagementCollection, err error)
+	Show(context.Context, *ShowPayload) (res ClientManagementCollection, err error)
+}
+
+// Auther defines the authorization functions to be implemented by the service.
+type Auther interface {
+	// JWTAuth implements the authorization logic for the JWT security scheme.
+	JWTAuth(ctx context.Context, token string, schema *security.JWTScheme) (context.Context, error)
 }
 
 // APIName is the name of the API as defined in the design.
@@ -41,10 +48,18 @@ var MethodNames = [3]string{"add", "get", "show"}
 
 // AddPayload is the payload type of the client service add method.
 type AddPayload struct {
+	// JWT used for authentication
+	Token string
 	// Client ID
 	ClientID string
 	// Client ID
 	ClientName string
+	// Contact Name
+	ContactName string
+	// Contact Email
+	ContactEmail string
+	// Contact Mobile Number
+	ContactMobile int
 }
 
 // ClientManagement is the result type of the client service get method.
@@ -53,6 +68,12 @@ type ClientManagement struct {
 	ClientID string
 	// Name of the Client
 	ClientName string
+	// Name of the Contact.
+	ContactName string
+	// Email of the Client Contact
+	ContactEmail string
+	// Mobile number of the Client Contact
+	ContactMobile int
 }
 
 // ClientManagementCollection is the result type of the client service show
@@ -61,6 +82,8 @@ type ClientManagementCollection []*ClientManagement
 
 // GetPayload is the payload type of the client service get method.
 type GetPayload struct {
+	// JWT used for authentication
+	Token string
 	// Client ID
 	ClientID string
 }
@@ -72,6 +95,18 @@ type NotFound struct {
 	// ID of missing data
 	ID string
 }
+
+// ShowPayload is the payload type of the client service show method.
+type ShowPayload struct {
+	// JWT used for authentication
+	Token string
+}
+
+// Token scopes are invalid
+type InvalidScopes string
+
+// Credentials are invalid
+type Unauthorized string
 
 // Error returns an error description.
 func (e *NotFound) Error() string {
@@ -88,6 +123,40 @@ func (e *NotFound) ErrorName() string {
 // GoaErrorName returns "NotFound".
 func (e *NotFound) GoaErrorName() string {
 	return "not_found"
+}
+
+// Error returns an error description.
+func (e InvalidScopes) Error() string {
+	return "Token scopes are invalid"
+}
+
+// ErrorName returns "invalid-scopes".
+//
+// Deprecated: Use GoaErrorName - https://github.com/goadesign/goa/issues/3105
+func (e InvalidScopes) ErrorName() string {
+	return e.GoaErrorName()
+}
+
+// GoaErrorName returns "invalid-scopes".
+func (e InvalidScopes) GoaErrorName() string {
+	return "invalid-scopes"
+}
+
+// Error returns an error description.
+func (e Unauthorized) Error() string {
+	return "Credentials are invalid"
+}
+
+// ErrorName returns "unauthorized".
+//
+// Deprecated: Use GoaErrorName - https://github.com/goadesign/goa/issues/3105
+func (e Unauthorized) ErrorName() string {
+	return e.GoaErrorName()
+}
+
+// GoaErrorName returns "unauthorized".
+func (e Unauthorized) GoaErrorName() string {
+	return "unauthorized"
 }
 
 // NewClientManagement initializes result type ClientManagement from viewed
@@ -128,6 +197,15 @@ func newClientManagement(vres *clientviews.ClientManagementView) *ClientManageme
 	if vres.ClientName != nil {
 		res.ClientName = *vres.ClientName
 	}
+	if vres.ContactName != nil {
+		res.ContactName = *vres.ContactName
+	}
+	if vres.ContactEmail != nil {
+		res.ContactEmail = *vres.ContactEmail
+	}
+	if vres.ContactMobile != nil {
+		res.ContactMobile = *vres.ContactMobile
+	}
 	return res
 }
 
@@ -135,8 +213,11 @@ func newClientManagement(vres *clientviews.ClientManagementView) *ClientManageme
 // type ClientManagementView using the "default" view.
 func newClientManagementView(res *ClientManagement) *clientviews.ClientManagementView {
 	vres := &clientviews.ClientManagementView{
-		ClientID:   &res.ClientID,
-		ClientName: &res.ClientName,
+		ClientID:      &res.ClientID,
+		ClientName:    &res.ClientName,
+		ContactName:   &res.ContactName,
+		ContactEmail:  &res.ContactEmail,
+		ContactMobile: &res.ContactMobile,
 	}
 	return vres
 }

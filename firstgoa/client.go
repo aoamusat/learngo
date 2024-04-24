@@ -2,8 +2,10 @@ package firstgoa
 
 import (
 	"context"
+	"fmt"
 	"log"
 
+	"goa.design/goa/v3/security"
 	client "learngo.io/firstgoa/gen/client"
 )
 
@@ -18,48 +20,41 @@ func NewClient(logger *log.Logger) client.Service {
 	return &clientsrvc{logger}
 }
 
+// JWTAuth implements the authorization logic for service "client" for the
+// "jwt" security scheme.
+func (s *clientsrvc) JWTAuth(ctx context.Context, token string, scheme *security.JWTScheme) (context.Context, error) {
+	//
+	// TBD: add authorization logic.
+	//
+	// In case of authorization failure this function should return
+	// one of the generated error structs, e.g.:
+	//
+	//    return ctx, myservice.MakeUnauthorizedError("invalid token")
+	//
+	// Alternatively this function may return an instance of
+	// goa.ServiceError with a Name field value that matches one of
+	// the design error names, e.g:
+	//
+	//    return ctx, goa.PermanentError("unauthorized", "invalid token")
+	//
+	return ctx, fmt.Errorf("not implemented")
+}
+
 // Add implements add.
-func (s *clientsrvc) Add(ctx context.Context,
-	p *client.AddPayload) (err error) {
-	s.logger.Print("client.add started")
-	newClient := client.ClientManagement{
-		ClientID:   p.ClientID,
-		ClientName: p.ClientName,
-	}
-	err = CreateClient(&newClient)
-	if err != nil {
-		s.logger.Print("An error occurred...")
-		s.logger.Print(err)
-		return
-	}
-	s.logger.Print("client.add completed")
+func (s *clientsrvc) Add(ctx context.Context, p *client.AddPayload) (err error) {
+	s.logger.Print("client.add")
 	return
 }
 
 // Get implements get.
-func (s *clientsrvc) Get(ctx context.Context,
-	p *client.GetPayload) (res *client.ClientManagement, err error) {
-	s.logger.Print("client.get started")
-	result, err := GetClient(p.ClientID)
-	if err != nil {
-		s.logger.Print("An error occurred...")
-		s.logger.Print(err)
-		return
-	}
-	s.logger.Print("client.get completed")
-	return &result, err
+func (s *clientsrvc) Get(ctx context.Context, p *client.GetPayload) (res *client.ClientManagement, err error) {
+	res = &client.ClientManagement{}
+	s.logger.Print("client.get")
+	return
 }
 
 // Show implements show.
-func (s *clientsrvc) Show(ctx context.Context) (res client.ClientManagementCollection,
-	err error) {
-	s.logger.Print("client.show started")
-	res, err = ListClients()
-	if err != nil {
-		s.logger.Print("An error occurred...")
-		s.logger.Print(err)
-		return
-	}
-	s.logger.Print("client.show completed")
+func (s *clientsrvc) Show(ctx context.Context, p *client.ShowPayload) (res client.ClientManagementCollection, err error) {
+	s.logger.Print("client.show")
 	return
 }

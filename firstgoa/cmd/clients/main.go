@@ -14,6 +14,7 @@ import (
 
 	clients "learngo.io/firstgoa"
 	client "learngo.io/firstgoa/gen/client"
+	signin "learngo.io/firstgoa/gen/signin"
 )
 
 func main() {
@@ -39,18 +40,22 @@ func main() {
 	// Initialize the services.
 	var (
 		clientSvc client.Service
+		signinSvc signin.Service
 	)
 	{
 		clientSvc = clients.NewClient(logger)
+		signinSvc = clients.NewSignin(logger)
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
 	var (
 		clientEndpoints *client.Endpoints
+		signinEndpoints *signin.Endpoints
 	)
 	{
 		clientEndpoints = client.NewEndpoints(clientSvc)
+		signinEndpoints = signin.NewEndpoints(signinSvc)
 	}
 
 	// Create channel used by both the signal handler and server goroutines
@@ -92,7 +97,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, "80")
 			}
-			handleHTTPServer(ctx, u, clientEndpoints, &wg, errc, logger, *dbgF)
+			handleHTTPServer(ctx, u, clientEndpoints, signinEndpoints, &wg, errc, logger, *dbgF)
 		}
 
 	default:

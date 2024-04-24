@@ -10,9 +10,11 @@ package server
 import (
 	"context"
 	"net/http"
+	"regexp"
 
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/plugins/v3/cors"
 	client "learngo.io/firstgoa/gen/client"
 )
 
@@ -22,6 +24,7 @@ type Server struct {
 	Add                http.Handler
 	Get                http.Handler
 	Show               http.Handler
+	CORS               http.Handler
 	GenHTTPOpenapiJSON http.Handler
 }
 
@@ -59,11 +62,15 @@ func New(
 			{"Add", "POST", "/api/v1/client/{ClientID}"},
 			{"Get", "GET", "/api/v1/client/{ClientID}"},
 			{"Show", "GET", "/api/v1/client"},
+			{"CORS", "OPTIONS", "/api/v1/client/{ClientID}"},
+			{"CORS", "OPTIONS", "/api/v1/client"},
+			{"CORS", "OPTIONS", "/openapi.json"},
 			{"./gen/http/openapi.json", "GET", "/openapi.json"},
 		},
 		Add:                NewAddHandler(e.Add, mux, decoder, encoder, errhandler, formatter),
 		Get:                NewGetHandler(e.Get, mux, decoder, encoder, errhandler, formatter),
 		Show:               NewShowHandler(e.Show, mux, decoder, encoder, errhandler, formatter),
+		CORS:               NewCORSHandler(),
 		GenHTTPOpenapiJSON: http.FileServer(fileSystemGenHTTPOpenapiJSON),
 	}
 }
@@ -76,6 +83,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Add = m(s.Add)
 	s.Get = m(s.Get)
 	s.Show = m(s.Show)
+	s.CORS = m(s.CORS)
 }
 
 // MethodNames returns the methods served.
@@ -86,6 +94,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountAddHandler(mux, h.Add)
 	MountGetHandler(mux, h.Get)
 	MountShowHandler(mux, h.Show)
+	MountCORSHandler(mux, h.CORS)
 	MountGenHTTPOpenapiJSON(mux, goahttp.Replace("", "/./gen/http/openapi.json", h.GenHTTPOpenapiJSON))
 }
 
@@ -97,7 +106,7 @@ func (s *Server) Mount(mux goahttp.Muxer) {
 // MountAddHandler configures the mux to serve the "client" service "add"
 // endpoint.
 func MountAddHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleClientOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -119,7 +128,7 @@ func NewAddHandler(
 	var (
 		decodeRequest  = DecodeAddRequest(mux, decoder)
 		encodeResponse = EncodeAddResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		encodeError    = EncodeAddError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
@@ -148,7 +157,7 @@ func NewAddHandler(
 // MountGetHandler configures the mux to serve the "client" service "get"
 // endpoint.
 func MountGetHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleClientOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -170,7 +179,7 @@ func NewGetHandler(
 	var (
 		decodeRequest  = DecodeGetRequest(mux, decoder)
 		encodeResponse = EncodeGetResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		encodeError    = EncodeGetError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
@@ -199,7 +208,7 @@ func NewGetHandler(
 // MountShowHandler configures the mux to serve the "client" service "show"
 // endpoint.
 func MountShowHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleClientOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -219,15 +228,22 @@ func NewShowHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
+		decodeRequest  = DecodeShowRequest(mux, decoder)
 		encodeResponse = EncodeShowResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		encodeError    = EncodeShowError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "show")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "client")
-		var err error
-		res, err := endpoint(ctx, nil)
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
 		if err != nil {
 			if err := encodeError(ctx, w, err); err != nil {
 				errhandler(ctx, w, err)
@@ -243,5 +259,53 @@ func NewShowHandler(
 // MountGenHTTPOpenapiJSON configures the mux to serve GET request made to
 // "/openapi.json".
 func MountGenHTTPOpenapiJSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/openapi.json", h.ServeHTTP)
+	mux.Handle("GET", "/openapi.json", HandleClientOrigin(h).ServeHTTP)
+}
+
+// MountCORSHandler configures the mux to serve the CORS endpoints for the
+// service client.
+func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
+	h = HandleClientOrigin(h)
+	mux.Handle("OPTIONS", "/api/v1/client/{ClientID}", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/api/v1/client", h.ServeHTTP)
+	mux.Handle("OPTIONS", "/openapi.json", h.ServeHTTP)
+}
+
+// NewCORSHandler creates a HTTP handler which returns a simple 204 response.
+func NewCORSHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
+	})
+}
+
+// HandleClientOrigin applies the CORS response headers corresponding to the
+// origin for the service client.
+func HandleClientOrigin(h http.Handler) http.Handler {
+	spec0 := regexp.MustCompile(".*localhost.*")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// Not a CORS request
+			h.ServeHTTP(w, r)
+			return
+		}
+		if cors.MatchOriginRegexp(origin, spec0) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Expose-Headers", "Content-Type, Origin")
+			w.Header().Set("Access-Control-Max-Age", "100")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			if acrm := r.Header.Get("Access-Control-Request-Method"); acrm != "" {
+				// We are handling a preflight request
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "X-Authorization, X-Time, X-Api-Version, Content-Type, Origin, Authorization")
+				w.WriteHeader(204)
+				return
+			}
+			h.ServeHTTP(w, r)
+			return
+		}
+		h.ServeHTTP(w, r)
+		return
+	})
 }

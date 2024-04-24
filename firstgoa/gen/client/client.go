@@ -31,7 +31,9 @@ func NewClient(add, get, show goa.Endpoint) *Client {
 
 // Add calls the "add" endpoint of the "client" service.
 // Add may return the following errors:
+//   - "invalid-scopes" (type InvalidScopes)
 //   - "not_found" (type *NotFound): Client not found
+//   - "unauthorized" (type Unauthorized)
 //   - error: internal error
 func (c *Client) Add(ctx context.Context, p *AddPayload) (err error) {
 	_, err = c.AddEndpoint(ctx, p)
@@ -40,7 +42,9 @@ func (c *Client) Add(ctx context.Context, p *AddPayload) (err error) {
 
 // Get calls the "get" endpoint of the "client" service.
 // Get may return the following errors:
+//   - "invalid-scopes" (type InvalidScopes)
 //   - "not_found" (type *NotFound): Client not found
+//   - "unauthorized" (type Unauthorized)
 //   - error: internal error
 func (c *Client) Get(ctx context.Context, p *GetPayload) (res *ClientManagement, err error) {
 	var ires any
@@ -52,9 +56,13 @@ func (c *Client) Get(ctx context.Context, p *GetPayload) (res *ClientManagement,
 }
 
 // Show calls the "show" endpoint of the "client" service.
-func (c *Client) Show(ctx context.Context) (res ClientManagementCollection, err error) {
+// Show may return the following errors:
+//   - "invalid-scopes" (type InvalidScopes)
+//   - "unauthorized" (type Unauthorized)
+//   - error: internal error
+func (c *Client) Show(ctx context.Context, p *ShowPayload) (res ClientManagementCollection, err error) {
 	var ires any
-	ires, err = c.ShowEndpoint(ctx, nil)
+	ires, err = c.ShowEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

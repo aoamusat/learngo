@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
     title: An api for clients
-    description: This api manages clients with CRUD operations
+    description: This API manages clients with CRUD operations
     version: 0.0.1
 host: localhost:8080
 consumes:
@@ -18,19 +18,41 @@ paths:
             tags:
                 - client
             summary: show client
+            description: |4-
+                **Required security scopes for jwt**:
+                  * `api:read`
             operationId: client#show
+            parameters:
+                - name: X-Authorization
+                  in: header
+                  description: JWT used for authentication
+                  required: true
+                  type: string
             responses:
                 "200":
                     description: OK response.
                     schema:
                         $ref: '#/definitions/ClientClientManagementResponseCollection'
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        type: string
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        type: string
             schemes:
                 - http
+            security:
+                - jwt_header_X-Authorization: []
     /api/v1/client/{ClientID}:
         get:
             tags:
                 - client
             summary: get client
+            description: |4-
+                **Required security scopes for jwt**:
+                  * `api:read`
             operationId: client#get
             parameters:
                 - name: ClientID
@@ -38,22 +60,45 @@ paths:
                   description: Client ID
                   required: true
                   type: string
+                - name: X-Authorization
+                  in: header
+                  description: JWT used for authentication
+                  required: true
+                  type: string
             responses:
                 "200":
                     description: OK response.
                     schema:
                         $ref: '#/definitions/ClientGetResponseBody'
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        type: string
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        type: string
             schemes:
                 - http
+            security:
+                - jwt_header_X-Authorization: []
         post:
             tags:
                 - client
             summary: add client
+            description: |4-
+                **Required security scopes for jwt**:
+                  * `api:write`
             operationId: client#add
             parameters:
                 - name: ClientID
                   in: path
                   description: Client ID
+                  required: true
+                  type: string
+                - name: X-Authorization
+                  in: header
+                  description: JWT used for authentication
                   required: true
                   type: string
                 - name: AddRequestBody
@@ -63,11 +108,24 @@ paths:
                     $ref: '#/definitions/ClientAddRequestBody'
                     required:
                         - ClientName
+                        - ContactName
+                        - ContactEmail
+                        - ContactMobile
             responses:
                 "201":
                     description: Created response.
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        type: string
+                "403":
+                    description: Forbidden response.
+                    schema:
+                        type: string
             schemes:
                 - http
+            security:
+                - jwt_header_X-Authorization: []
     /openapi.json:
         get:
             tags:
@@ -81,6 +139,34 @@ paths:
                         type: file
             schemes:
                 - http
+    /signin/authenticate:
+        post:
+            tags:
+                - signin
+            summary: authenticate signin
+            description: Creates a valid JWT
+            operationId: signin#authenticate
+            parameters:
+                - name: Authorization
+                  in: header
+                  description: Basic Auth security using Basic scheme (https://tools.ietf.org/html/rfc7617)
+                  required: true
+                  type: string
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/SigninAuthenticateResponseBody'
+                        required:
+                            - jwt
+                "401":
+                    description: Unauthorized response.
+                    schema:
+                        type: string
+            schemes:
+                - http
+            security:
+                - basic_header_Authorization: []
 definitions:
     ClientAddRequestBody:
         title: ClientAddRequestBody
@@ -89,11 +175,30 @@ definitions:
             ClientName:
                 type: string
                 description: Client ID
-                example: Repudiandae nesciunt nemo magnam eos.
+                example: Occaecati dolorem maxime consectetur hic magnam illo.
+            ContactEmail:
+                type: string
+                description: Contact Email
+                example: Aut voluptas aut amet et.
+            ContactMobile:
+                type: integer
+                description: Contact Mobile Number
+                example: 7456424277740607536
+                format: int64
+            ContactName:
+                type: string
+                description: Contact Name
+                example: Et dolor qui odit.
         example:
-            ClientName: Earum nihil totam adipisci ab corrupti consequuntur.
+            ClientName: Officiis ipsam et consequatur.
+            ContactEmail: Accusantium reprehenderit magnam omnis.
+            ContactMobile: 2736179520740594828
+            ContactName: Hic voluptas impedit voluptas magnam deserunt.
         required:
             - ClientName
+            - ContactName
+            - ContactEmail
+            - ContactMobile
     ClientClientManagementResponseCollection:
         title: 'Mediatype identifier: application/vnd.client; type=collection; view=default'
         type: array
@@ -103,12 +208,19 @@ definitions:
         example:
             - ClientID: ABCDEF12356890
               ClientName: John Doe Limited
+              ContactEmail: john.doe@johndoe.com
+              ContactMobile: 12365474235
+              ContactName: John Doe
             - ClientID: ABCDEF12356890
               ClientName: John Doe Limited
+              ContactEmail: john.doe@johndoe.com
+              ContactMobile: 12365474235
+              ContactName: John Doe
             - ClientID: ABCDEF12356890
               ClientName: John Doe Limited
-            - ClientID: ABCDEF12356890
-              ClientName: John Doe Limited
+              ContactEmail: john.doe@johndoe.com
+              ContactMobile: 12365474235
+              ContactName: John Doe
     ClientGetResponseBody:
         title: 'Mediatype identifier: application/vnd.client; view=default'
         type: object
@@ -121,13 +233,32 @@ definitions:
                 type: string
                 description: Name of the Client
                 example: John Doe Limited
+            ContactEmail:
+                type: string
+                description: Email of the Client Contact
+                example: john.doe@johndoe.com
+            ContactMobile:
+                type: integer
+                description: Mobile number of the Client Contact
+                example: 12365474235
+                format: int64
+            ContactName:
+                type: string
+                description: Name of the Contact.
+                example: John Doe
         description: GetResponseBody result type (default view)
         example:
             ClientID: ABCDEF12356890
             ClientName: John Doe Limited
+            ContactEmail: john.doe@johndoe.com
+            ContactMobile: 12365474235
+            ContactName: John Doe
         required:
             - ClientID
             - ClientName
+            - ContactName
+            - ContactEmail
+            - ContactMobile
     ClientManagementResponse:
         title: 'Mediatype identifier: application/vnd.client; view=default'
         type: object
@@ -140,10 +271,61 @@ definitions:
                 type: string
                 description: Name of the Client
                 example: John Doe Limited
+            ContactEmail:
+                type: string
+                description: Email of the Client Contact
+                example: john.doe@johndoe.com
+            ContactMobile:
+                type: integer
+                description: Mobile number of the Client Contact
+                example: 12365474235
+                format: int64
+            ContactName:
+                type: string
+                description: Name of the Contact.
+                example: John Doe
         description: A ClientManagement type describes a Client of company. (default view)
         example:
             ClientID: ABCDEF12356890
             ClientName: John Doe Limited
+            ContactEmail: john.doe@johndoe.com
+            ContactMobile: 12365474235
+            ContactName: John Doe
         required:
             - ClientID
             - ClientName
+            - ContactName
+            - ContactEmail
+            - ContactMobile
+    SigninAuthenticateResponseBody:
+        title: SigninAuthenticateResponseBody
+        type: object
+        properties:
+            jwt:
+                type: string
+                description: JWT token
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
+        example:
+            jwt: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
+        required:
+            - jwt
+securityDefinitions:
+    basic_header_Authorization:
+        type: basic
+        description: |-
+            Basic authentication used to authenticate security principal during signin
+
+            **Security Scopes**:
+              * `api:read`: Read-only access
+    jwt_header_X-Authorization:
+        type: apiKey
+        description: |-
+            Secures endpoint by requiring a valid
+            JWT token retrieved via the signin endpoint. Supports
+            scopes "api:read" and "api:write".
+
+            **Security Scopes**:
+              * `api:read`: Read-only access
+              * `api:write`: Read and write access
+        name: X-Authorization
+        in: header

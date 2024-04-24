@@ -52,6 +52,10 @@ func EncodeAddRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Re
 		if !ok {
 			return goahttp.ErrInvalidType("client", "add", "*client.AddPayload", v)
 		}
+		{
+			head := p.Token
+			req.Header.Set("X-Authorization", head)
+		}
 		body := NewAddRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("client", "add", err)
@@ -63,6 +67,10 @@ func EncodeAddRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Re
 // DecodeAddResponse returns a decoder for responses returned by the client add
 // endpoint. restoreBody controls whether the response body should be restored
 // after having been read.
+// DecodeAddResponse may return the following errors:
+//   - "invalid-scopes" (type client.InvalidScopes): http.StatusForbidden
+//   - "unauthorized" (type client.Unauthorized): http.StatusUnauthorized
+//   - error: internal error
 func DecodeAddResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
@@ -80,6 +88,26 @@ func DecodeAddResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody
 		switch resp.StatusCode {
 		case http.StatusCreated:
 			return nil, nil
+		case http.StatusForbidden:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "add", err)
+			}
+			return nil, NewAddInvalidScopes(body)
+		case http.StatusUnauthorized:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "add", err)
+			}
+			return nil, NewAddUnauthorized(body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("client", "add", resp.StatusCode, string(body))
@@ -112,9 +140,29 @@ func (c *Client) BuildGetRequest(ctx context.Context, v any) (*http.Request, err
 	return req, nil
 }
 
+// EncodeGetRequest returns an encoder for requests sent to the client get
+// server.
+func EncodeGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*client.GetPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("client", "get", "*client.GetPayload", v)
+		}
+		{
+			head := p.Token
+			req.Header.Set("X-Authorization", head)
+		}
+		return nil
+	}
+}
+
 // DecodeGetResponse returns a decoder for responses returned by the client get
 // endpoint. restoreBody controls whether the response body should be restored
 // after having been read.
+// DecodeGetResponse may return the following errors:
+//   - "invalid-scopes" (type client.InvalidScopes): http.StatusForbidden
+//   - "unauthorized" (type client.Unauthorized): http.StatusUnauthorized
+//   - error: internal error
 func DecodeGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
@@ -147,6 +195,26 @@ func DecodeGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody
 			}
 			res := client.NewClientManagement(vres)
 			return res, nil
+		case http.StatusForbidden:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "get", err)
+			}
+			return nil, NewGetInvalidScopes(body)
+		case http.StatusUnauthorized:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "get", err)
+			}
+			return nil, NewGetUnauthorized(body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("client", "get", resp.StatusCode, string(body))
@@ -169,9 +237,29 @@ func (c *Client) BuildShowRequest(ctx context.Context, v any) (*http.Request, er
 	return req, nil
 }
 
+// EncodeShowRequest returns an encoder for requests sent to the client show
+// server.
+func EncodeShowRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*client.ShowPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("client", "show", "*client.ShowPayload", v)
+		}
+		{
+			head := p.Token
+			req.Header.Set("X-Authorization", head)
+		}
+		return nil
+	}
+}
+
 // DecodeShowResponse returns a decoder for responses returned by the client
 // show endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
+// DecodeShowResponse may return the following errors:
+//   - "invalid-scopes" (type client.InvalidScopes): http.StatusForbidden
+//   - "unauthorized" (type client.Unauthorized): http.StatusUnauthorized
+//   - error: internal error
 func DecodeShowResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
@@ -204,6 +292,26 @@ func DecodeShowResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 			}
 			res := client.NewClientManagementCollection(vres)
 			return res, nil
+		case http.StatusForbidden:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "show", err)
+			}
+			return nil, NewShowInvalidScopes(body)
+		case http.StatusUnauthorized:
+			var (
+				body string
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("client", "show", err)
+			}
+			return nil, NewShowUnauthorized(body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("client", "show", resp.StatusCode, string(body))
@@ -216,8 +324,11 @@ func DecodeShowResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 // *ClientManagementResponse.
 func unmarshalClientManagementResponseToClientviewsClientManagementView(v *ClientManagementResponse) *clientviews.ClientManagementView {
 	res := &clientviews.ClientManagementView{
-		ClientID:   v.ClientID,
-		ClientName: v.ClientName,
+		ClientID:      v.ClientID,
+		ClientName:    v.ClientName,
+		ContactName:   v.ContactName,
+		ContactEmail:  v.ContactEmail,
+		ContactMobile: v.ContactMobile,
 	}
 
 	return res

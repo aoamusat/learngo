@@ -18,6 +18,12 @@ import (
 type AddRequestBody struct {
 	// Client ID
 	ClientName string `form:"ClientName" json:"ClientName" xml:"ClientName"`
+	// Contact Name
+	ContactName string `form:"ContactName" json:"ContactName" xml:"ContactName"`
+	// Contact Email
+	ContactEmail string `form:"ContactEmail" json:"ContactEmail" xml:"ContactEmail"`
+	// Contact Mobile Number
+	ContactMobile int `form:"ContactMobile" json:"ContactMobile" xml:"ContactMobile"`
 }
 
 // GetResponseBody is the type of the "client" service "get" endpoint HTTP
@@ -27,6 +33,12 @@ type GetResponseBody struct {
 	ClientID *string `form:"ClientID,omitempty" json:"ClientID,omitempty" xml:"ClientID,omitempty"`
 	// Name of the Client
 	ClientName *string `form:"ClientName,omitempty" json:"ClientName,omitempty" xml:"ClientName,omitempty"`
+	// Name of the Contact.
+	ContactName *string `form:"ContactName,omitempty" json:"ContactName,omitempty" xml:"ContactName,omitempty"`
+	// Email of the Client Contact
+	ContactEmail *string `form:"ContactEmail,omitempty" json:"ContactEmail,omitempty" xml:"ContactEmail,omitempty"`
+	// Mobile number of the Client Contact
+	ContactMobile *int `form:"ContactMobile,omitempty" json:"ContactMobile,omitempty" xml:"ContactMobile,omitempty"`
 }
 
 // ShowResponseBody is the type of the "client" service "show" endpoint HTTP
@@ -39,24 +51,66 @@ type ClientManagementResponse struct {
 	ClientID *string `form:"ClientID,omitempty" json:"ClientID,omitempty" xml:"ClientID,omitempty"`
 	// Name of the Client
 	ClientName *string `form:"ClientName,omitempty" json:"ClientName,omitempty" xml:"ClientName,omitempty"`
+	// Name of the Contact.
+	ContactName *string `form:"ContactName,omitempty" json:"ContactName,omitempty" xml:"ContactName,omitempty"`
+	// Email of the Client Contact
+	ContactEmail *string `form:"ContactEmail,omitempty" json:"ContactEmail,omitempty" xml:"ContactEmail,omitempty"`
+	// Mobile number of the Client Contact
+	ContactMobile *int `form:"ContactMobile,omitempty" json:"ContactMobile,omitempty" xml:"ContactMobile,omitempty"`
 }
 
 // NewAddRequestBody builds the HTTP request body from the payload of the "add"
 // endpoint of the "client" service.
 func NewAddRequestBody(p *client.AddPayload) *AddRequestBody {
 	body := &AddRequestBody{
-		ClientName: p.ClientName,
+		ClientName:    p.ClientName,
+		ContactName:   p.ContactName,
+		ContactEmail:  p.ContactEmail,
+		ContactMobile: p.ContactMobile,
 	}
 	return body
+}
+
+// NewAddInvalidScopes builds a client service add endpoint invalid-scopes
+// error.
+func NewAddInvalidScopes(body string) client.InvalidScopes {
+	v := client.InvalidScopes(body)
+
+	return v
+}
+
+// NewAddUnauthorized builds a client service add endpoint unauthorized error.
+func NewAddUnauthorized(body string) client.Unauthorized {
+	v := client.Unauthorized(body)
+
+	return v
 }
 
 // NewGetClientManagementOK builds a "client" service "get" endpoint result
 // from a HTTP "OK" response.
 func NewGetClientManagementOK(body *GetResponseBody) *clientviews.ClientManagementView {
 	v := &clientviews.ClientManagementView{
-		ClientID:   body.ClientID,
-		ClientName: body.ClientName,
+		ClientID:      body.ClientID,
+		ClientName:    body.ClientName,
+		ContactName:   body.ContactName,
+		ContactEmail:  body.ContactEmail,
+		ContactMobile: body.ContactMobile,
 	}
+
+	return v
+}
+
+// NewGetInvalidScopes builds a client service get endpoint invalid-scopes
+// error.
+func NewGetInvalidScopes(body string) client.InvalidScopes {
+	v := client.InvalidScopes(body)
+
+	return v
+}
+
+// NewGetUnauthorized builds a client service get endpoint unauthorized error.
+func NewGetUnauthorized(body string) client.Unauthorized {
+	v := client.Unauthorized(body)
 
 	return v
 }
@@ -72,6 +126,21 @@ func NewShowClientManagementCollectionOK(body ShowResponseBody) clientviews.Clie
 	return v
 }
 
+// NewShowInvalidScopes builds a client service show endpoint invalid-scopes
+// error.
+func NewShowInvalidScopes(body string) client.InvalidScopes {
+	v := client.InvalidScopes(body)
+
+	return v
+}
+
+// NewShowUnauthorized builds a client service show endpoint unauthorized error.
+func NewShowUnauthorized(body string) client.Unauthorized {
+	v := client.Unauthorized(body)
+
+	return v
+}
+
 // ValidateClientManagementResponse runs the validations defined on
 // ClientManagementResponse
 func ValidateClientManagementResponse(body *ClientManagementResponse) (err error) {
@@ -80,6 +149,15 @@ func ValidateClientManagementResponse(body *ClientManagementResponse) (err error
 	}
 	if body.ClientName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ClientName", "body"))
+	}
+	if body.ContactName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactName", "body"))
+	}
+	if body.ContactEmail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactEmail", "body"))
+	}
+	if body.ContactMobile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactMobile", "body"))
 	}
 	return
 }

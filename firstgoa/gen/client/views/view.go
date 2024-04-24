@@ -34,6 +34,12 @@ type ClientManagementView struct {
 	ClientID *string
 	// Name of the Client
 	ClientName *string
+	// Name of the Contact.
+	ContactName *string
+	// Email of the Client Contact
+	ContactEmail *string
+	// Mobile number of the Client Contact
+	ContactMobile *int
 }
 
 // ClientManagementCollectionView is a type that runs validations on a
@@ -47,6 +53,9 @@ var (
 		"default": {
 			"ClientID",
 			"ClientName",
+			"ContactName",
+			"ContactEmail",
+			"ContactMobile",
 		},
 	}
 	// ClientManagementCollectionMap is a map indexing the attribute names of
@@ -55,6 +64,9 @@ var (
 		"default": {
 			"ClientID",
 			"ClientName",
+			"ContactName",
+			"ContactEmail",
+			"ContactMobile",
 		},
 	}
 )
@@ -91,6 +103,15 @@ func ValidateClientManagementView(result *ClientManagementView) (err error) {
 	}
 	if result.ClientName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ClientName", "result"))
+	}
+	if result.ContactName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactName", "result"))
+	}
+	if result.ContactEmail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactEmail", "result"))
+	}
+	if result.ContactMobile == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ContactMobile", "result"))
 	}
 	return
 }

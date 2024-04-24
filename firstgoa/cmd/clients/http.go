@@ -14,11 +14,13 @@ import (
 	"goa.design/goa/v3/middleware"
 	client "learngo.io/firstgoa/gen/client"
 	clientsvr "learngo.io/firstgoa/gen/http/client/server"
+	signinsvr "learngo.io/firstgoa/gen/http/signin/server"
+	signin "learngo.io/firstgoa/gen/signin"
 )
 
 // handleHTTPServer starts configures and starts a HTTP server on the given
 // URL. It shuts down the server if any error is received in the error channel.
-func handleHTTPServer(ctx context.Context, u *url.URL, clientEndpoints *client.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func handleHTTPServer(ctx context.Context, u *url.URL, clientEndpoints *client.Endpoints, signinEndpoints *signin.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
 
 	// Setup goa log adapter.
 	var (
@@ -50,19 +52,23 @@ func handleHTTPServer(ctx context.Context, u *url.URL, clientEndpoints *client.E
 	// responses.
 	var (
 		clientServer *clientsvr.Server
+		signinServer *signinsvr.Server
 	)
 	{
 		eh := errorHandler(logger)
 		clientServer = clientsvr.New(clientEndpoints, mux, dec, enc, eh, nil, nil)
+		signinServer = signinsvr.New(signinEndpoints, mux, dec, enc, eh, nil)
 		if debug {
 			servers := goahttp.Servers{
 				clientServer,
+				signinServer,
 			}
 			servers.Use(httpmdlwr.Debug(mux, os.Stdout))
 		}
 	}
 	// Configure the mux.
 	clientsvr.Mount(mux, clientServer)
+	signinsvr.Mount(mux, signinServer)
 
 	// Wrap the multiplexer with additional middlewares. Middlewares mounted
 	// here apply to all the service endpoints.
@@ -76,6 +82,9 @@ func handleHTTPServer(ctx context.Context, u *url.URL, clientEndpoints *client.E
 	// configure the server as required by your service.
 	srv := &http.Server{Addr: u.Host, Handler: handler, ReadHeaderTimeout: time.Second * 60}
 	for _, m := range clientServer.Mounts {
+		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+	}
+	for _, m := range signinServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
