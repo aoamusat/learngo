@@ -49,6 +49,10 @@ func (lst *LinkedList[T]) Length() int {
 func main() {
 	var m = map[int]string{1: "2", 2: "4", 4: "8"}
 
+	stack := Stack[string]{}
+
+	fmt.Printf("%v", stack.store)
+
 	fmt.Println("keys:", MapKeys(m))
 
 	_ = MapKeys[int, string](m)
