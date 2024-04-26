@@ -8,6 +8,7 @@ Welcome to the "Learning Go" repository! This repository contains examples and e
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Getting Started](#getting-started)
+  - [References](#references)
 
 ## Introduction
 
@@ -19,4 +20,12 @@ To get started with learning Go using this repository, follow these steps:
 
 1. Clone the repository to your local machine:
    ```bash
-   git clone https://github.com/your-username/learninggo.git
+   git clone https://github.com/aoamusat/learngo.git
+   ```
+2. Make sure you have [Go](https://go.dev/dl) installed on your system
+
+## References
+
+- [Go By Example](https://gobyexample.com/)
+- [Tour of Go](https://go.dev/tour)
+- [The Go Programming Language](https://books.google.com.ng/books/about/The_Go_Programming_Language.html?id=SJHvCgAAQBAJ&redir_esc=y)
