@@ -56,13 +56,12 @@ func (movie *Movie) SavePoster() error {
 }
 
 func main() {
-	var MovieName string
 	if len(os.Args) < 2 {
-		fmt.Println("Warning: Movie is required\nUsage: poster <movie name>")
-		MovieName = ""
-	} else {
-		MovieName = os.Args[1]
+		fmt.Println("Usage: poster <movie name>")
+		return
 	}
+
+	MovieName := os.Args[1]
 
 	ApiKey := os.Getenv("OMDB_API_KEY")
 
