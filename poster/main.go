@@ -64,8 +64,11 @@ func main() {
 		MovieName = os.Args[1]
 	}
 
+	ApiKey := os.Getenv("OMDB_API_KEY")
+
 	query := url.QueryEscape(MovieName)
-	response, err := http.Get("https://www.omdbapi.com/?apikey=&s=" + query)
+	Url := fmt.Sprintf("https://www.omdbapi.com/?apikey=%s&s=%s", ApiKey, query)
+	response, err := http.Get(Url)
 
 	if err != nil {
 		fmt.Printf("error getting: %v\n", err)
