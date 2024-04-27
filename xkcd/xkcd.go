@@ -80,6 +80,7 @@ func LoadIndexFromFile(filename string) (map[int]Comic, error) {
 
 func XkcdInit() {
 	fmt.Println("Initializing comic index from 1970 till date...")
+	spinner(5000)
 	ComicMap := make(map[int]Comic)
 	for idx := 1970; idx <= time.Now().Year(); idx++ {
 		comic, err := FetchComic(idx)
@@ -91,6 +92,15 @@ func XkcdInit() {
 	}
 	SaveComicsToLocalIndex(ComicMap, "xkcd_index.json")
 	fmt.Printf("Comic index successfully initialized. :)")
+}
+
+func spinner(delay time.Duration) {
+	for {
+		for _, r := range `--\|/` {
+			fmt.Printf("\r%c", r)
+			time.Sleep(delay)
+		}
+	}
 }
 
 func XkcdSearch(SearchTerm string) {
