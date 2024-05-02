@@ -82,7 +82,7 @@ func XkcdInit() {
 	fmt.Println("Initializing comic index from 1970 till date...")
 	spinner(100 * time.Millisecond)
 	ComicMap := make(map[int]Comic)
-	for idx := 1970; idx <= time.Now().Year(); idx++ {
+	for idx := 1000; idx <= 1999; idx++ {
 		comic, err := FetchComic(idx)
 		if err != nil {
 			log.Printf("Failed to fetch comic %d: %s", idx, err.Error())
