@@ -80,7 +80,6 @@ func LoadIndexFromFile(filename string) (map[int]Comic, error) {
 
 func XkcdInit() {
 	fmt.Println("Initializing comic index from 1970 till date...")
-	spinner(100 * time.Millisecond)
 	ComicMap := make(map[int]Comic)
 	for idx := 1000; idx <= 1999; idx++ {
 		comic, err := FetchComic(idx)
@@ -88,6 +87,8 @@ func XkcdInit() {
 			log.Printf("Failed to fetch comic %d: %s", idx, err.Error())
 			continue
 		}
+		// spinner(1 * time.Millisecond)
+		log.Printf("Comic %s: %d", comic.Title, comic.Num)
 		ComicMap[comic.Num] = comic
 	}
 	SaveComicsToLocalIndex(ComicMap, "xkcd_index.json")
